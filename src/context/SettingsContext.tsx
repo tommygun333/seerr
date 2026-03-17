@@ -8,7 +8,7 @@ export interface SettingsContextProps {
   children?: React.ReactNode;
 }
 
-const defaultSettings = {
+const defaultSettings: PublicSettingsResponse = {
   initialized: false,
   applicationTitle: 'Seerr',
   applicationUrl: '',
@@ -32,6 +32,7 @@ const defaultSettings = {
   newPlexLogin: true,
   youtubeUrl: '',
   plexClientIdentifier: '',
+  openIdProviders: [],
 };
 
 export const SettingsContext = React.createContext<SettingsContextProps>({
