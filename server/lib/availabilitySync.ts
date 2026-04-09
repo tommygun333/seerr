@@ -342,6 +342,11 @@ class AvailabilitySync {
               ...jellyfinSeasonsMap,
               ...sonarrSeasonsMap,
             ]);
+
+            logger.debug(
+              `[AvailabilitySync] TMDB ${media.tmdbId} finalSeasons: ${JSON.stringify(Object.fromEntries(finalSeasons))} (filtered: ${JSON.stringify(Object.fromEntries(filteredSeasonsMap))}, jellyfin: ${JSON.stringify(Object.fromEntries(jellyfinSeasonsMap))}, sonarr: ${JSON.stringify(Object.fromEntries(sonarrSeasonsMap))})`,
+              { label: 'AvailabilitySync' }
+            );
             finalSeasons4k = new Map([
               ...filteredSeasonsMap4k,
               ...jellyfinSeasonsMap4k,
@@ -983,6 +988,11 @@ class AvailabilitySync {
         if (media.mediaType === 'tv' && jellyfinMedia !== undefined) {
           this.jellyfinSeasonsCache[ratingKey] =
             await this.jellyfinClient?.getSeasons(ratingKey);
+
+          logger.debug(
+            `[AvailabilitySync] Jellyfin returned ${this.jellyfinSeasonsCache[ratingKey]?.length} season entries for TMDB ${media.tmdbId}: [${this.jellyfinSeasonsCache[ratingKey]?.map((s) => s.IndexNumber).join(', ')}]`,
+            { label: 'AvailabilitySync' }
+          );
         }
       }
 
@@ -1069,6 +1079,11 @@ class AvailabilitySync {
 
     const seasonIsAvailable = jellyfinSeasons?.find(
       (jellyfinSeason) => jellyfinSeason.IndexNumber === season.seasonNumber
+    );
+
+    logger.debug(
+      `[AvailabilitySync] Jellyfin season check: TMDB ${media.tmdbId} S${season.seasonNumber} - found: ${!!seasonIsAvailable}, total cached seasons: ${jellyfinSeasons?.length ?? 0}`,
+      { label: 'AvailabilitySync' }
     );
 
     if (seasonIsAvailable) {
