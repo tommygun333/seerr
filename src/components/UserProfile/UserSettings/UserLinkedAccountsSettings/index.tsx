@@ -53,10 +53,11 @@ const UserLinkedAccountsSettings = () => {
   const intl = useIntl();
   const settings = useSettings();
   const router = useRouter();
-  const { user: currentUser } = useUser();
+  const { user: currentUser, hasPermission: currentUserHasPermission } =
+    useUser();
   const {
     user,
-    hasPermission,
+    hasPermission: targetUserHasPermission,
     revalidate: revalidateUser,
   } = useUser({ id: Number(router.query.userId) });
   const { data: passwordInfo } = useSWR<{ hasPassword: boolean }>(
@@ -66,6 +67,17 @@ const UserLinkedAccountsSettings = () => {
   const [error, setError] = useState<string | null>(null);
 
   const applicationName = settings.currentSettings.applicationTitle;
+  const isOwnProfileView = !!user && currentUser?.id === user.id;
+  const canModifyLinkedAccounts =
+    !!user &&
+    (isOwnProfileView ||
+      (currentUserHasPermission(Permission.ADMIN) &&
+        (user?.id !== 1 || currentUser?.id === 1) &&
+        (!targetUserHasPermission(Permission.ADMIN) || currentUser?.id === 1)));
+  const jellyfinAccountsAvailable =
+    settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN ||
+    (settings.currentSettings.mediaServerType !== MediaServerType.EMBY &&
+      settings.currentSettings.jellyfinConfigured);
 
   const accounts: LinkedAccount[] = useMemo(() => {
     const accounts: LinkedAccount[] = [];
@@ -124,6 +136,7 @@ const UserLinkedAccountsSettings = () => {
         setTimeout(() => linkPlexAccount(), 1500);
       },
       hide:
+        !isOwnProfileView ||
         (settings.currentSettings.mediaServerType !== MediaServerType.PLEX &&
           settings.currentSettings.mediaServerType !==
             MediaServerType.JELLYFIN &&
@@ -134,10 +147,7 @@ const UserLinkedAccountsSettings = () => {
       name: 'Jellyfin',
       action: () => setShowJellyfinModal(true),
       hide:
-        (settings.currentSettings.mediaServerType !==
-          MediaServerType.JELLYFIN &&
-          settings.currentSettings.mediaServerType !== MediaServerType.EMBY &&
-          settings.currentSettings.mediaServerType !== MediaServerType.PLEX) ||
+        !jellyfinAccountsAvailable ||
         accounts.some((a) => a.type === LinkedAccountType.Jellyfin),
     },
     {
@@ -162,8 +172,8 @@ const UserLinkedAccountsSettings = () => {
   };
 
   if (
-    currentUser?.id !== user?.id &&
-    hasPermission(Permission.ADMIN) &&
+    !isOwnProfileView &&
+    targetUserHasPermission(Permission.ADMIN) &&
     currentUser?.id !== 1
   ) {
     return (
@@ -203,7 +213,7 @@ const UserLinkedAccountsSettings = () => {
             })}
           </h6>
         </div>
-        {currentUser?.id === user?.id && !!linkable.length && (
+        {canModifyLinkedAccounts && !!linkable.length && (
           <div>
             <Dropdown text="Link Account" buttonType="ghost">
               {linkable.map(({ name, action }) => (
@@ -269,6 +279,8 @@ const UserLinkedAccountsSettings = () => {
 
       <LinkJellyfinModal
         show={showJellyfinModal}
+        targetUserId={user?.id}
+        adminLink={!isOwnProfileView}
         onClose={() => setShowJellyfinModal(false)}
         onSave={() => {
           setShowJellyfinModal(false);
