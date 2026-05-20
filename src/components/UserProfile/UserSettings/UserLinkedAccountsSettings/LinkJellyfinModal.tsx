@@ -123,6 +123,10 @@ const LinkJellyfinModal: React.FC<LinkJellyfinModalProps> = ({
     }
   };
 
+  if (!userId) {
+    return null;
+  }
+
   if (adminLink) {
     return (
       <Transition
