@@ -7592,6 +7592,9 @@ paths:
                   type: string
                 mediaId:
                   type: number
+                userId:
+                  type: number
+                  nullable: true
       responses:
         '201':
           description: Succesfully created the issue
