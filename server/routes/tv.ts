@@ -235,7 +235,7 @@ tvRoutes.get('/:id/ratingscombined', async (req, res, next) => {
     });
     const imdbId = tv.external_ids?.imdb_id ?? null;
 
-    logger.info('TV ratingscombined TMDB lookup', {
+    logger.info('TV ratings combined TMDB lookup', {
       label: 'API',
       route: 'tv/:id/ratingscombined',
       tvId: req.params.id,
@@ -254,7 +254,7 @@ tvRoutes.get('/:id/ratingscombined', async (req, res, next) => {
       imdbRatings = await imdbApi.getTvRatings(imdbId);
     }
 
-    logger.info('TV ratingscombined sidecar lookup', {
+    logger.info('TV ratings combined sidecar lookup', {
       label: 'API',
       tvId: req.params.id,
       imdbId,
