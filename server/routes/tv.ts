@@ -1,5 +1,7 @@
 import { getMetadataProvider } from '@server/api/metadata';
+import IMDBRadarrProxy from '@server/api/rating/imdbRadarrProxy';
 import RottenTomatoes from '@server/api/rating/rottentomatoes';
+import type { RatingResponse } from '@server/api/ratings';
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
@@ -209,6 +211,52 @@ tvRoutes.get('/:id/ratings', async (req, res, next) => {
     }
 
     return res.status(200).json(rtratings);
+  } catch (e) {
+    logger.debug('Something went wrong retrieving series ratings', {
+      label: 'API',
+      errorMessage: e.message,
+      tvId: req.params.id,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve series ratings.',
+    });
+  }
+});
+
+tvRoutes.get('/:id/ratingscombined', async (req, res, next) => {
+  const tmdb = new TheMovieDb();
+  const rtapi = new RottenTomatoes();
+  const imdbApi = new IMDBRadarrProxy();
+
+  try {
+    const tv = await tmdb.getTvShow({
+      tvId: Number(req.params.id),
+    });
+
+    const rtratings = await rtapi.getTVRatings(
+      tv.name,
+      tv.first_air_date ? Number(tv.first_air_date.slice(0, 4)) : undefined
+    );
+
+    let imdbRatings;
+    if (tv.external_ids?.imdb_id) {
+      imdbRatings = await imdbApi.getTvRatings(tv.external_ids.imdb_id);
+    }
+
+    if (!rtratings && !imdbRatings) {
+      return next({
+        status: 404,
+        message: 'No ratings found.',
+      });
+    }
+
+    const ratings: RatingResponse = {
+      ...(rtratings ? { rt: rtratings } : {}),
+      ...(imdbRatings ? { imdb: imdbRatings } : {}),
+    };
+
+    return res.status(200).json(ratings);
   } catch (e) {
     logger.debug('Something went wrong retrieving series ratings', {
       label: 'API',
