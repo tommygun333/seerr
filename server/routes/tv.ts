@@ -233,6 +233,16 @@ tvRoutes.get('/:id/ratingscombined', async (req, res, next) => {
     const tv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
+    const imdbId = tv.external_ids?.imdb_id ?? null;
+
+    logger.info('TV ratings combined TMDB lookup', {
+      label: 'API',
+      route: 'tv/:id/ratingscombined',
+      tvId: req.params.id,
+      tvName: tv.name,
+      hasExternalIds: Boolean(tv.external_ids),
+      imdbId,
+    });
 
     const rtratings = await rtapi.getTVRatings(
       tv.name,
@@ -240,9 +250,17 @@ tvRoutes.get('/:id/ratingscombined', async (req, res, next) => {
     );
 
     let imdbRatings;
-    if (tv.external_ids?.imdb_id) {
-      imdbRatings = await imdbApi.getTvRatings(tv.external_ids.imdb_id);
+    if (imdbId) {
+      imdbRatings = await imdbApi.getTvRatings(imdbId);
     }
+
+    logger.info('TV ratings combined sidecar lookup', {
+      label: 'API',
+      tvId: req.params.id,
+      imdbId,
+      hasImdbRatings: Boolean(imdbRatings),
+      hasRtRatings: Boolean(rtratings),
+    });
 
     if (!rtratings && !imdbRatings) {
       return next({
