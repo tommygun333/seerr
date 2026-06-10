@@ -233,7 +233,7 @@ tvRoutes.get('/:id/ratingscombined', async (req, res, next) => {
     const tv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
-    const imdbId = tv.external_ids?.imdb_id ?? null;
+    const imdbId = tv.external_ids?.imdb_id ?? mapTvDetails(tv).externalIds.imdbId;
 
     logger.info('TV ratings combined TMDB lookup', {
       label: 'API',
