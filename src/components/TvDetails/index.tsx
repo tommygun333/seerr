@@ -2,6 +2,7 @@ import RTAudFresh from '@app/assets/rt_aud_fresh.svg';
 import RTAudRotten from '@app/assets/rt_aud_rotten.svg';
 import RTFresh from '@app/assets/rt_fresh.svg';
 import RTRotten from '@app/assets/rt_rotten.svg';
+import ImdbLogo from '@app/assets/services/imdb.svg';
 import Spinner from '@app/assets/spinner.svg';
 import TmdbLogo from '@app/assets/tmdb_logo.svg';
 import BlocklistModal from '@app/components/BlocklistModal';
@@ -47,7 +48,7 @@ import {
   PlayIcon,
   StarIcon,
 } from '@heroicons/react/24/solid';
-import type { RTRating } from '@server/api/rating/rottentomatoes';
+import type { RatingResponse } from '@server/api/ratings';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import { IssueStatus } from '@server/constants/issue';
 import {
@@ -99,6 +100,7 @@ const messages = defineMessages('components.TvDetails', {
   rtcriticsscore: 'Rotten Tomatoes Tomatometer',
   rtaudiencescore: 'Rotten Tomatoes Audience Score',
   tmdbuserscore: 'TMDB User Score',
+  imdbuserscore: 'IMDB User Score – votes: {formattedCount}',
   watchlistSuccess: '<strong>{title}</strong> added to watchlist successfully!',
   watchlistDeleted:
     '<strong>{title}</strong> Removed from watchlist successfully!',
@@ -144,8 +146,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     ),
   });
 
-  const { data: ratingData } = useSWR<RTRating>(
-    `/api/v1/tv/${router.query.tvId}/ratings`
+  const { data: ratingData } = useSWR<RatingResponse>(
+    `/api/v1/tv/${router.query.tvId}/ratingscombined`
   );
 
   const sortedCrew = useMemo(
@@ -1091,44 +1093,73 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
         <div className="media-overview-right">
           <div className="media-facts">
             {(!!data.voteCount ||
-              (ratingData?.criticsRating && !!ratingData?.criticsScore) ||
-              (ratingData?.audienceRating && !!ratingData?.audienceScore)) && (
+              (ratingData?.rt?.criticsRating &&
+                !!ratingData?.rt?.criticsScore) ||
+              (ratingData?.rt?.audienceRating &&
+                !!ratingData?.rt?.audienceScore) ||
+              ratingData?.imdb?.criticsScore) && (
               <div className="media-ratings">
-                {ratingData?.criticsRating && !!ratingData?.criticsScore && (
+                {ratingData?.rt?.criticsRating &&
+                  !!ratingData?.rt?.criticsScore && (
+                    <Tooltip
+                      content={intl.formatMessage(messages.rtcriticsscore)}
+                    >
+                      <a
+                        href={ratingData.rt.url}
+                        className="media-rating"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {ratingData.rt.criticsRating === 'Rotten' ? (
+                          <RTRotten className="mr-1 w-6" />
+                        ) : (
+                          <RTFresh className="mr-1 w-6" />
+                        )}
+                        <span>{ratingData.rt.criticsScore}%</span>
+                      </a>
+                    </Tooltip>
+                  )}
+                {ratingData?.rt?.audienceRating &&
+                  !!ratingData?.rt?.audienceScore && (
+                    <Tooltip
+                      content={intl.formatMessage(messages.rtaudiencescore)}
+                    >
+                      <a
+                        href={ratingData.rt.url}
+                        className="media-rating"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {ratingData.rt.audienceRating === 'Spilled' ? (
+                          <RTAudRotten className="mr-1 w-6" />
+                        ) : (
+                          <RTAudFresh className="mr-1 w-6" />
+                        )}
+                        <span>{ratingData.rt.audienceScore}%</span>
+                      </a>
+                    </Tooltip>
+                  )}
+                {ratingData?.imdb?.criticsScore && (
                   <Tooltip
-                    content={intl.formatMessage(messages.rtcriticsscore)}
+                    content={intl.formatMessage(messages.imdbuserscore, {
+                      formattedCount: intl.formatNumber(
+                        ratingData.imdb.criticsScoreCount,
+                        {
+                          notation: 'compact',
+                          compactDisplay: 'short',
+                          maximumFractionDigits: 1,
+                        }
+                      ),
+                    })}
                   >
                     <a
-                      href={ratingData.url}
+                      href={ratingData.imdb.url}
                       className="media-rating"
                       target="_blank"
                       rel="noreferrer"
                     >
-                      {ratingData.criticsRating === 'Rotten' ? (
-                        <RTRotten className="mr-1 w-6" />
-                      ) : (
-                        <RTFresh className="mr-1 w-6" />
-                      )}
-                      <span>{ratingData.criticsScore}%</span>
-                    </a>
-                  </Tooltip>
-                )}
-                {ratingData?.audienceRating && !!ratingData?.audienceScore && (
-                  <Tooltip
-                    content={intl.formatMessage(messages.rtaudiencescore)}
-                  >
-                    <a
-                      href={ratingData.url}
-                      className="media-rating"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {ratingData.audienceRating === 'Spilled' ? (
-                        <RTAudRotten className="mr-1 w-6" />
-                      ) : (
-                        <RTAudFresh className="mr-1 w-6" />
-                      )}
-                      <span>{ratingData.audienceScore}%</span>
+                      <ImdbLogo className="mr-1 w-6" />
+                      <span>{ratingData.imdb.criticsScore}</span>
                     </a>
                   </Tooltip>
                 )}
@@ -1313,7 +1344,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                 tmdbId={data.id}
                 tvdbId={data.externalIds.tvdbId}
                 imdbId={data.externalIds.imdbId}
-                rtUrl={ratingData?.url}
+                rtUrl={ratingData?.rt?.url}
                 mediaUrl={plexUrl ?? plexUrl4k}
               />
             </div>
