@@ -228,33 +228,44 @@ tvRoutes.get('/:id/ratingscombined', async (req, res, next) => {
   const tmdb = new TheMovieDb();
   const rtapi = new RottenTomatoes();
   const imdbApi = new IMDBRadarrProxy();
-
+  
   try {
-    const tv = await tmdb.getTvShow({
+    const tmdbTv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
-
-    const imdbId = tv.external_ids?.imdb_id ?? mapTvDetails(tv).externalIds.imdbId;
-
+  
+    const metadataProvider = tmdbTv.keywords.results.some(
+      (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
+    )
+      ? await getMetadataProvider('anime')
+      : await getMetadataProvider('tv');
+  
+    const tv = await metadataProvider.getTvShow({
+      tvId: Number(req.params.id),
+      language: (req.query.language as string) ?? req.locale,
+    });
+  
+    const tvDetails = mapTvDetails(tv);
+    const imdbId = tvDetails.externalIds?.imdbId ?? null;
+  
     logger.info('TV ratings combined TMDB lookup', {
       label: 'API',
       route: 'tv/:id/ratingscombined',
       tvId: req.params.id,
       tvName: tv.name,
-      hasExternalIds: Boolean(tv.external_ids),
       imdbId,
     });
-
+  
     const rtratings = await rtapi.getTVRatings(
       tv.name,
       tv.first_air_date ? Number(tv.first_air_date.slice(0, 4)) : undefined
     );
-
+  
     let imdbRatings;
     if (imdbId) {
       imdbRatings = await imdbApi.getTvRatings(imdbId);
     }
-
+  
     logger.info('TV ratings combined sidecar lookup', {
       label: 'API',
       tvId: req.params.id,
@@ -262,19 +273,19 @@ tvRoutes.get('/:id/ratingscombined', async (req, res, next) => {
       hasImdbRatings: Boolean(imdbRatings),
       hasRtRatings: Boolean(rtratings),
     });
-
+  
     if (!rtratings && !imdbRatings) {
       return next({
         status: 404,
         message: 'No ratings found.',
       });
     }
-
+  
     const ratings: RatingResponse = {
       ...(rtratings ? { rt: rtratings } : {}),
       ...(imdbRatings ? { imdb: imdbRatings } : {}),
     };
-
+  
     return res.status(200).json(ratings);
   } catch (e) {
     logger.debug('Something went wrong retrieving series ratings', {
