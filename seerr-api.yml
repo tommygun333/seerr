@@ -7044,9 +7044,9 @@ paths:
                         type: number
                         example: 8.7
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: Ratings not found
         '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Internal server error
   /person/{personId}:
     get:
       summary: Get person details
