@@ -37,8 +37,10 @@ const messages = defineMessages('components.Discover.FilterSlideover', {
   originalLanguage: 'Original Language',
   runtimeText: '{minValue}-{maxValue} minute runtime',
   ratingText: 'Ratings between {minValue} and {maxValue}',
+  imdbRatingText: 'IMDb ratings between {minValue} and {maxValue}',
   clearfilters: 'Clear Active Filters',
   tmdbuserscore: 'TMDB User Score',
+  imdbuserscore: 'IMDb User Score',
   tmdbuservotecount: 'TMDB User Vote Count',
   runtime: 'Runtime',
   streamingservices: 'Streaming Services',
@@ -330,6 +332,45 @@ const FilterSlideover = ({
             subText={intl.formatMessage(messages.voteCount, {
               minValue: currentFilters.voteCountGte ?? 0,
               maxValue: currentFilters.voteCountLte ?? 1000,
+            })}
+          />
+        </div>
+        <span className="text-lg font-semibold">
+          {intl.formatMessage(messages.imdbuserscore)}
+        </span>
+        <div className="relative z-0">
+          <MultiRangeSlider
+            min={1}
+            max={10}
+            defaultMaxValue={
+              currentFilters.imdbRatingLte
+                ? Number(currentFilters.imdbRatingLte)
+                : undefined
+            }
+            defaultMinValue={
+              currentFilters.imdbRatingGte
+                ? Number(currentFilters.imdbRatingGte)
+                : undefined
+            }
+            onUpdateMin={(min) => {
+              updateQueryParams(
+                'imdbRatingGte',
+                min !== 1 && Number(currentFilters.imdbRatingLte) !== 10
+                  ? min.toString()
+                  : undefined
+              );
+            }}
+            onUpdateMax={(max) => {
+              updateQueryParams(
+                'imdbRatingLte',
+                max !== 10 && Number(currentFilters.imdbRatingGte) !== 1
+                  ? max.toString()
+                  : undefined
+              );
+            }}
+            subText={intl.formatMessage(messages.imdbRatingText, {
+              minValue: currentFilters.imdbRatingGte ?? 1,
+              maxValue: currentFilters.imdbRatingLte ?? 10,
             })}
           />
         </div>

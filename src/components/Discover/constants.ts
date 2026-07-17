@@ -107,6 +107,8 @@ export const QueryFilterOptions = z.object({
   voteAverageLte: z.string().optional(),
   voteCountLte: z.string().optional(),
   voteCountGte: z.string().optional(),
+  imdbRatingGte: z.string().optional(),
+  imdbRatingLte: z.string().optional(),
   watchRegion: z.string().optional(),
   watchProviders: z.string().optional(),
   status: z.string().optional(),
@@ -237,6 +239,12 @@ export const countActiveFilters = (filterValues: FilterOptions): number => {
     totalCount += 1;
     delete clonedFilters.voteAverageGte;
     delete clonedFilters.voteAverageLte;
+  }
+
+  if (clonedFilters.imdbRatingGte || filterValues.imdbRatingLte) {
+    totalCount += 1;
+    delete clonedFilters.imdbRatingGte;
+    delete clonedFilters.imdbRatingLte;
   }
 
   if (clonedFilters.voteCountGte || filterValues.voteCountLte) {

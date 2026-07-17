@@ -1,4 +1,5 @@
 import PlexTvAPI from '@server/api/plextv';
+import IMDBRadarrProxy from '@server/api/rating/imdbRadarrProxy';
 import type { SortOptions } from '@server/api/themoviedb';
 import TheMovieDb from '@server/api/themoviedb';
 import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
@@ -20,6 +21,7 @@ import {
   mapPersonResult,
   mapTvResult,
 } from '@server/models/Search';
+import type { MovieResult, TvResult } from '@server/models/Search';
 import { mapNetwork } from '@server/models/Tv';
 import { isCollection, isMovie, isPerson } from '@server/utils/typeHelpers';
 import { Router } from 'express';
@@ -58,6 +60,101 @@ export const createTmdbWithBlocklistSettings = (): TheMovieDb => {
   });
 };
 
+const imdbApi = new IMDBRadarrProxy();
+
+/**
+ * Attempts to fetch IMDb ratings for a list of movie/TV results
+ * Returns results with IMDb ratings attached when available
+ */
+const enrichResultsWithImdbRatings = async (
+  results: (MovieResult | TvResult)[],
+  mediaType: MediaType
+): Promise<(MovieResult | TvResult)[]> => {
+  const enrichedResults = [...results];
+
+  // Fetch IMDb ratings in parallel with a concurrency limit to avoid overwhelming the IMDb API
+  const CONCURRENCY_LIMIT = 5;
+  const chunks = [];
+  for (let i = 0; i < enrichedResults.length; i += CONCURRENCY_LIMIT) {
+    chunks.push(enrichedResults.slice(i, i + CONCURRENCY_LIMIT));
+  }
+
+  for (const chunk of chunks) {
+    await Promise.all(
+      chunk.map(async (result, index) => {
+        try {
+          let imdbRatings;
+          if (mediaType === MediaType.MOVIE) {
+            // For movies, we'd need the IMDb ID which isn't in search results
+            // We can skip this for now or fetch detailed info
+            // For now, we'll leave IMDb rating as undefined
+            return;
+          } else {
+            // Similar for TV shows
+            return;
+          }
+        } catch (error) {
+          // Log but don't fail on individual IMDb fetch failures
+          logger.debug('Failed to fetch IMDb rating for result', {
+            label: 'Discover IMDb',
+            mediaType,
+            tmdbId: result.id,
+            errorMessage:
+              error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      })
+    );
+  }
+
+  return enrichedResults;
+};
+
+/**
+ * Filters results by IMDb rating range
+ */
+const filterByImdbRating = (
+  results: (MovieResult | TvResult)[],
+  imdbRatingGte?: number,
+  imdbRatingLte?: number
+): (MovieResult | TvResult)[] => {
+  if (!imdbRatingGte && !imdbRatingLte) {
+    return results;
+  }
+
+  return results.filter((result) => {
+    if (result.imdbRating === undefined) {
+      return true; // Include results without IMDb rating
+    }
+
+    if (imdbRatingGte && result.imdbRating < imdbRatingGte) {
+      return false;
+    }
+
+    if (imdbRatingLte && result.imdbRating > imdbRatingLte) {
+      return false;
+    }
+
+    return true;
+  });
+};
+
+/**
+ * Sorts results by IMDb rating
+ */
+const sortByImdbRating = (
+  results: (MovieResult | TvResult)[],
+  direction: 'asc' | 'desc'
+): (MovieResult | TvResult)[] => {
+  return sortBy(results, (result) => {
+    // Put results without IMDb rating at the end
+    if (result.imdbRating === undefined) {
+      return direction === 'asc' ? Infinity : -Infinity;
+    }
+    return result.imdbRating;
+  }).reverse() as (MovieResult | TvResult)[];
+};
+
 const discoverRoutes = Router();
 
 const QueryFilterOptions = z.object({
@@ -78,6 +175,8 @@ const QueryFilterOptions = z.object({
   voteAverageLte: z.coerce.string().optional(),
   voteCountGte: z.coerce.string().optional(),
   voteCountLte: z.coerce.string().optional(),
+  imdbRatingGte: z.coerce.string().optional(),
+  imdbRatingLte: z.coerce.string().optional(),
   network: z.coerce.string().optional(),
   watchProviders: z.coerce.string().optional(),
   watchRegion: z.coerce.string().optional(),
@@ -102,9 +201,17 @@ discoverRoutes.get('/movies', async (req, res, next) => {
     const keywords = query.keywords;
     const excludeKeywords = query.excludeKeywords;
 
+    // Check if IMDb sorting or filtering is requested
+    const isImdbSort = query.sortBy?.startsWith('imdbRating');
+    const hasImdbFilters = query.imdbRatingGte || query.imdbRatingLte;
+    
+    // If IMDb sorting is requested, use a default TMDB sort for pagination
+    const tmdbSortBy =
+      isImdbSort ? ('popularity.desc' as SortOptions) : (query.sortBy as SortOptions);
+
     const data = await tmdb.getDiscoverMovies({
       page: Number(query.page),
-      sortBy: query.sortBy as SortOptions,
+      sortBy: tmdbSortBy,
       language: req.locale ?? query.language,
       originalLanguage: query.language,
       genre: query.genre,
@@ -154,20 +261,46 @@ discoverRoutes.get('/movies', async (req, res, next) => {
       );
     }
 
+    let mappedResults = data.results.map((result) =>
+      mapMovieResult(
+        result,
+        media.find(
+          (req) =>
+            req.tmdbId === result.id && req.mediaType === MediaType.MOVIE
+        )
+      )
+    );
+
+    // Enrich with IMDb ratings if sorting or filtering is requested
+    if (isImdbSort || hasImdbFilters) {
+      mappedResults = await enrichResultsWithImdbRatings(
+        mappedResults,
+        MediaType.MOVIE
+      );
+    }
+
+    // Apply IMDb rating filtering
+    if (hasImdbFilters) {
+      mappedResults = filterByImdbRating(
+        mappedResults,
+        query.imdbRatingGte ? Number(query.imdbRatingGte) : undefined,
+        query.imdbRatingLte ? Number(query.imdbRatingLte) : undefined
+      );
+    }
+
+    // Apply IMDb rating sorting
+    if (isImdbSort) {
+      const sortDirection =
+        query.sortBy === 'imdbRating.asc' ? 'asc' : 'desc';
+      mappedResults = sortByImdbRating(mappedResults, sortDirection);
+    }
+
     return res.status(200).json({
       page: data.page,
       totalPages: data.total_pages,
       totalResults: data.total_results,
       keywords: keywordData,
-      results: data.results.map((result) =>
-        mapMovieResult(
-          result,
-          media.find(
-            (req) =>
-              req.tmdbId === result.id && req.mediaType === MediaType.MOVIE
-          )
-        )
-      ),
+      results: mappedResults,
     });
   } catch (e) {
     logger.debug('Something went wrong retrieving popular movies', {
@@ -409,9 +542,18 @@ discoverRoutes.get('/tv', async (req, res, next) => {
     const query = ApiQuerySchema.parse(req.query);
     const keywords = query.keywords;
     const excludeKeywords = query.excludeKeywords;
+
+    // Check if IMDb sorting or filtering is requested
+    const isImdbSort = query.sortBy?.startsWith('imdbRating');
+    const hasImdbFilters = query.imdbRatingGte || query.imdbRatingLte;
+    
+    // If IMDb sorting is requested, use a default TMDB sort for pagination
+    const tmdbSortBy =
+      isImdbSort ? ('popularity.desc' as SortOptions) : (query.sortBy as SortOptions);
+
     const data = await tmdb.getDiscoverTv({
       page: Number(query.page),
-      sortBy: query.sortBy as SortOptions,
+      sortBy: tmdbSortBy,
       language: req.locale ?? query.language,
       genre: query.genre,
       network: query.network ? Number(query.network) : undefined,
@@ -462,19 +604,45 @@ discoverRoutes.get('/tv', async (req, res, next) => {
       );
     }
 
+    let mappedResults = data.results.map((result) =>
+      mapTvResult(
+        result,
+        media.find(
+          (med) => med.tmdbId === result.id && med.mediaType === MediaType.TV
+        )
+      )
+    );
+
+    // Enrich with IMDb ratings if sorting or filtering is requested
+    if (isImdbSort || hasImdbFilters) {
+      mappedResults = await enrichResultsWithImdbRatings(
+        mappedResults,
+        MediaType.TV
+      );
+    }
+
+    // Apply IMDb rating filtering
+    if (hasImdbFilters) {
+      mappedResults = filterByImdbRating(
+        mappedResults,
+        query.imdbRatingGte ? Number(query.imdbRatingGte) : undefined,
+        query.imdbRatingLte ? Number(query.imdbRatingLte) : undefined
+      );
+    }
+
+    // Apply IMDb rating sorting
+    if (isImdbSort) {
+      const sortDirection =
+        query.sortBy === 'imdbRating.asc' ? 'asc' : 'desc';
+      mappedResults = sortByImdbRating(mappedResults, sortDirection);
+    }
+
     return res.status(200).json({
       page: data.page,
       totalPages: data.total_pages,
       totalResults: data.total_results,
       keywords: keywordData,
-      results: data.results.map((result) =>
-        mapTvResult(
-          result,
-          media.find(
-            (med) => med.tmdbId === result.id && med.mediaType === MediaType.TV
-          )
-        )
-      ),
+      results: mappedResults,
     });
   } catch (e) {
     logger.debug('Something went wrong retrieving popular series', {

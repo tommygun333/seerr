@@ -20,6 +20,8 @@ interface SearchResult {
   backdropPath?: string;
   voteCount: number;
   voteAverage: number;
+  imdbRating?: number;
+  imdbVoteCount?: number;
   genreIds: number[];
   overview: string;
   originalLanguage: string;
