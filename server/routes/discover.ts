@@ -110,6 +110,7 @@ const enrichResultsWithImdbRatings = async (
           }
 
           if (imdbRatings && imdbRatings.criticsScore) {
+            // Note: IMDb API returns 'criticsScore' property for user ratings
             result.imdbRating = imdbRatings.criticsScore;
             result.imdbVoteCount = imdbRatings.criticsScoreCount;
           }
@@ -143,8 +144,9 @@ const filterByImdbRating = (
   }
 
   return results.filter((result) => {
+    // Exclude results without IMDb rating when filtering by IMDb
     if (result.imdbRating === undefined) {
-      return true; // Include results without IMDb rating
+      return false;
     }
 
     if (imdbRatingGte && result.imdbRating < imdbRatingGte) {
@@ -167,12 +169,13 @@ const sortByImdbRating = (
   direction: 'asc' | 'desc'
 ): (MovieResult | TvResult)[] => {
   return sortBy(results, (result) => {
-    // Put results without IMDb rating at the end
+    // Items without IMDb rating should always appear at the end
     if (result.imdbRating === undefined) {
-      return direction === 'asc' ? Infinity : -Infinity;
+      return Infinity;
     }
-    return result.imdbRating;
-  }).reverse() as (MovieResult | TvResult)[];
+    // For descending order, negate the rating so sortBy ascending produces descending results
+    return direction === 'desc' ? -result.imdbRating : result.imdbRating;
+  }) as (MovieResult | TvResult)[];
 };
 
 const discoverRoutes = Router();
@@ -312,7 +315,7 @@ discoverRoutes.get('/movies', async (req, res, next) => {
     // Apply IMDb rating sorting
     if (isImdbSort) {
       const sortDirection =
-        query.sortBy === 'imdbRating.asc' ? 'asc' : 'desc';
+        query.sortBy === 'imdbRating.asc' ? 'asc' : 'imdbRating.desc' ? 'desc' : 'asc';
       mappedResults = sortByImdbRating(mappedResults, sortDirection);
     }
 
@@ -655,7 +658,7 @@ discoverRoutes.get('/tv', async (req, res, next) => {
     // Apply IMDb rating sorting
     if (isImdbSort) {
       const sortDirection =
-        query.sortBy === 'imdbRating.asc' ? 'asc' : 'desc';
+        query.sortBy === 'imdbRating.asc' ? 'asc' : 'imdbRating.desc' ? 'desc' : 'asc';
       mappedResults = sortByImdbRating(mappedResults, sortDirection);
     }
 

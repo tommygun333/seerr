@@ -355,7 +355,7 @@ const FilterSlideover = ({
             onUpdateMin={(min) => {
               updateQueryParams(
                 'imdbRatingGte',
-                min !== 1 && Number(currentFilters.imdbRatingLte) !== 10
+                min !== 1
                   ? min.toString()
                   : undefined
               );
@@ -363,7 +363,7 @@ const FilterSlideover = ({
             onUpdateMax={(max) => {
               updateQueryParams(
                 'imdbRatingLte',
-                max !== 10 && Number(currentFilters.imdbRatingGte) !== 1
+                max !== 10
                   ? max.toString()
                   : undefined
               );
