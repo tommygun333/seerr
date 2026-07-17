@@ -1,6 +1,7 @@
 import PlexTvAPI from '@server/api/plextv';
 import IMDBRadarrProxy from '@server/api/rating/imdbRadarrProxy';
 import type { SortOptions } from '@server/api/themoviedb';
+import { SortOptionsIterable } from '@server/api/themoviedb';
 import TheMovieDb from '@server/api/themoviedb';
 import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
 import { MediaType } from '@server/constants/media';
@@ -61,16 +62,66 @@ export const createTmdbWithBlocklistSettings = (): TheMovieDb => {
 };
 
 const imdbApi = new IMDBRadarrProxy();
+type DiscoverImdbSortOption = 'imdbRating.asc' | 'imdbRating.desc';
+
+const isImdbSortOption = (
+  sortBy?: string
+): sortBy is DiscoverImdbSortOption =>
+  sortBy === 'imdbRating.asc' || sortBy === 'imdbRating.desc';
+
+const tmdbSortOptions = new Set<string>(SortOptionsIterable);
+const isTmdbSortOption = (sortBy?: string): sortBy is SortOptions =>
+  !!sortBy && tmdbSortOptions.has(sortBy);
+
+const queryParamString = z.preprocess((value) => {
+  if (Array.isArray(value)) {
+    return value[value.length - 1];
+  }
+
+  return value;
+}, z.coerce.string());
+
+const parseImdbRatingValue = (value?: string): number | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  // Next router query merges can surface repeated values as a comma-delimited string.
+  // Use the latest value to match how URL query updates overwrite prior slider positions.
+  const normalizedValue = value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .pop();
+
+  const parsedValue = Number(normalizedValue ?? value);
+  return Number.isFinite(parsedValue) ? parsedValue : undefined;
+};
+
+const parseDateQueryParam = (value?: string): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return undefined;
+  }
+
+  const parsedDate = new Date(value);
+  return Number.isNaN(parsedDate.getTime())
+    ? undefined
+    : parsedDate.toISOString().split('T')[0];
+};
 
 /**
  * Attempts to fetch IMDb ratings for a list of movie/TV results
  * Returns results with IMDb ratings attached when available
  */
-const enrichResultsWithImdbRatings = async (
-  results: (MovieResult | TvResult)[],
+const enrichResultsWithImdbRatings = async <T extends MovieResult | TvResult>(
+  results: T[],
   mediaType: MediaType,
   tmdb?: TheMovieDb
-): Promise<(MovieResult | TvResult)[]> => {
+): Promise<T[]> => {
   if (!tmdb || results.length === 0) {
     return results;
   }
@@ -134,12 +185,12 @@ const enrichResultsWithImdbRatings = async (
 /**
  * Filters results by IMDb rating range
  */
-const filterByImdbRating = (
-  results: (MovieResult | TvResult)[],
+const filterByImdbRating = <T extends MovieResult | TvResult>(
+  results: T[],
   imdbRatingGte?: number,
   imdbRatingLte?: number
-): (MovieResult | TvResult)[] => {
-  if (!imdbRatingGte && !imdbRatingLte) {
+): T[] => {
+  if (imdbRatingGte === undefined && imdbRatingLte === undefined) {
     return results;
   }
 
@@ -149,11 +200,11 @@ const filterByImdbRating = (
       return false;
     }
 
-    if (imdbRatingGte && result.imdbRating < imdbRatingGte) {
+    if (imdbRatingGte !== undefined && result.imdbRating < imdbRatingGte) {
       return false;
     }
 
-    if (imdbRatingLte && result.imdbRating > imdbRatingLte) {
+    if (imdbRatingLte !== undefined && result.imdbRating > imdbRatingLte) {
       return false;
     }
 
@@ -164,10 +215,10 @@ const filterByImdbRating = (
 /**
  * Sorts results by IMDb rating
  */
-const sortByImdbRating = (
-  results: (MovieResult | TvResult)[],
+const sortByImdbRating = <T extends MovieResult | TvResult>(
+  results: T[],
   direction: 'asc' | 'desc'
-): (MovieResult | TvResult)[] => {
+): T[] => {
   return sortBy(results, (result) => {
     // Items without IMDb rating should always appear at the end
     if (result.imdbRating === undefined) {
@@ -175,7 +226,7 @@ const sortByImdbRating = (
     }
     // For descending order, negate the rating so sortBy ascending produces descending results
     return direction === 'desc' ? -result.imdbRating : result.imdbRating;
-  }) as (MovieResult | TvResult)[];
+  }) as T[];
 };
 
 const discoverRoutes = Router();
@@ -198,8 +249,8 @@ const QueryFilterOptions = z.object({
   voteAverageLte: z.coerce.string().optional(),
   voteCountGte: z.coerce.string().optional(),
   voteCountLte: z.coerce.string().optional(),
-  imdbRatingGte: z.coerce.string().optional(),
-  imdbRatingLte: z.coerce.string().optional(),
+  imdbRatingGte: queryParamString.optional(),
+  imdbRatingLte: queryParamString.optional(),
   network: z.coerce.string().optional(),
   watchProviders: z.coerce.string().optional(),
   watchRegion: z.coerce.string().optional(),
@@ -225,12 +276,16 @@ discoverRoutes.get('/movies', async (req, res, next) => {
     const excludeKeywords = query.excludeKeywords;
 
     // Check if IMDb sorting or filtering is requested
-    const isImdbSort = query.sortBy?.startsWith('imdbRating');
-    const hasImdbFilters = query.imdbRatingGte || query.imdbRatingLte;
+    const isImdbSort = isImdbSortOption(query.sortBy);
+    const imdbRatingGte = parseImdbRatingValue(query.imdbRatingGte);
+    const imdbRatingLte = parseImdbRatingValue(query.imdbRatingLte);
+    const hasImdbFilters =
+      imdbRatingGte !== undefined || imdbRatingLte !== undefined;
     
     // If IMDb sorting is requested, use a default TMDB sort for pagination
-    const tmdbSortBy =
-      isImdbSort ? ('popularity.desc' as SortOptions) : (query.sortBy as SortOptions);
+    const tmdbSortBy = isTmdbSortOption(query.sortBy)
+      ? query.sortBy
+      : 'popularity.desc';
 
     const data = await tmdb.getDiscoverMovies({
       page: Number(query.page),
@@ -239,12 +294,8 @@ discoverRoutes.get('/movies', async (req, res, next) => {
       originalLanguage: query.language,
       genre: query.genre,
       studio: query.studio,
-      primaryReleaseDateLte: query.primaryReleaseDateLte
-        ? new Date(query.primaryReleaseDateLte).toISOString().split('T')[0]
-        : undefined,
-      primaryReleaseDateGte: query.primaryReleaseDateGte
-        ? new Date(query.primaryReleaseDateGte).toISOString().split('T')[0]
-        : undefined,
+      primaryReleaseDateLte: parseDateQueryParam(query.primaryReleaseDateLte),
+      primaryReleaseDateGte: parseDateQueryParam(query.primaryReleaseDateGte),
       keywords,
       excludeKeywords,
       withRuntimeGte: query.withRuntimeGte,
@@ -307,15 +358,14 @@ discoverRoutes.get('/movies', async (req, res, next) => {
     if (hasImdbFilters) {
       mappedResults = filterByImdbRating(
         mappedResults,
-        query.imdbRatingGte ? Number(query.imdbRatingGte) : undefined,
-        query.imdbRatingLte ? Number(query.imdbRatingLte) : undefined
+        imdbRatingGte,
+        imdbRatingLte
       );
     }
 
     // Apply IMDb rating sorting
     if (isImdbSort) {
-      const sortDirection =
-        query.sortBy === 'imdbRating.asc' ? 'asc' : 'imdbRating.desc' ? 'desc' : 'asc';
+      const sortDirection = query.sortBy === 'imdbRating.desc' ? 'desc' : 'asc';
       mappedResults = sortByImdbRating(mappedResults, sortDirection);
     }
 
@@ -568,12 +618,16 @@ discoverRoutes.get('/tv', async (req, res, next) => {
     const excludeKeywords = query.excludeKeywords;
 
     // Check if IMDb sorting or filtering is requested
-    const isImdbSort = query.sortBy?.startsWith('imdbRating');
-    const hasImdbFilters = query.imdbRatingGte || query.imdbRatingLte;
+    const isImdbSort = isImdbSortOption(query.sortBy);
+    const imdbRatingGte = parseImdbRatingValue(query.imdbRatingGte);
+    const imdbRatingLte = parseImdbRatingValue(query.imdbRatingLte);
+    const hasImdbFilters =
+      imdbRatingGte !== undefined || imdbRatingLte !== undefined;
     
     // If IMDb sorting is requested, use a default TMDB sort for pagination
-    const tmdbSortBy =
-      isImdbSort ? ('popularity.desc' as SortOptions) : (query.sortBy as SortOptions);
+    const tmdbSortBy = isTmdbSortOption(query.sortBy)
+      ? query.sortBy
+      : 'popularity.desc';
 
     const data = await tmdb.getDiscoverTv({
       page: Number(query.page),
@@ -581,12 +635,8 @@ discoverRoutes.get('/tv', async (req, res, next) => {
       language: req.locale ?? query.language,
       genre: query.genre,
       network: query.network ? Number(query.network) : undefined,
-      firstAirDateLte: query.firstAirDateLte
-        ? new Date(query.firstAirDateLte).toISOString().split('T')[0]
-        : undefined,
-      firstAirDateGte: query.firstAirDateGte
-        ? new Date(query.firstAirDateGte).toISOString().split('T')[0]
-        : undefined,
+      firstAirDateLte: parseDateQueryParam(query.firstAirDateLte),
+      firstAirDateGte: parseDateQueryParam(query.firstAirDateGte),
       originalLanguage: query.language,
       keywords,
       excludeKeywords,
@@ -650,15 +700,14 @@ discoverRoutes.get('/tv', async (req, res, next) => {
     if (hasImdbFilters) {
       mappedResults = filterByImdbRating(
         mappedResults,
-        query.imdbRatingGte ? Number(query.imdbRatingGte) : undefined,
-        query.imdbRatingLte ? Number(query.imdbRatingLte) : undefined
+        imdbRatingGte,
+        imdbRatingLte
       );
     }
 
     // Apply IMDb rating sorting
     if (isImdbSort) {
-      const sortDirection =
-        query.sortBy === 'imdbRating.asc' ? 'asc' : 'imdbRating.desc' ? 'desc' : 'asc';
+      const sortDirection = query.sortBy === 'imdbRating.desc' ? 'desc' : 'asc';
       mappedResults = sortByImdbRating(mappedResults, sortDirection);
     }
 

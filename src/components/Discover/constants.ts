@@ -2,6 +2,14 @@ import defineMessages from '@app/utils/defineMessages';
 import type { ParsedUrlQuery } from 'querystring';
 import { z } from 'zod';
 
+const queryParamString = z.preprocess((value) => {
+  if (Array.isArray(value)) {
+    return value[value.length - 1];
+  }
+
+  return value;
+}, z.coerce.string());
+
 type AvailableColors =
   | 'black'
   | 'red'
@@ -107,8 +115,8 @@ export const QueryFilterOptions = z.object({
   voteAverageLte: z.string().optional(),
   voteCountLte: z.string().optional(),
   voteCountGte: z.string().optional(),
-  imdbRatingGte: z.string().optional(),
-  imdbRatingLte: z.string().optional(),
+  imdbRatingGte: queryParamString.optional(),
+  imdbRatingLte: queryParamString.optional(),
   watchRegion: z.string().optional(),
   watchProviders: z.string().optional(),
   status: z.string().optional(),
@@ -194,6 +202,14 @@ export const prepareFilterValues = (
 
   if (values.voteCountLte) {
     filterValues.voteCountLte = values.voteCountLte;
+  }
+
+  if (values.imdbRatingGte) {
+    filterValues.imdbRatingGte = values.imdbRatingGte;
+  }
+
+  if (values.imdbRatingLte) {
+    filterValues.imdbRatingLte = values.imdbRatingLte;
   }
 
   if (values.watchProviders) {
