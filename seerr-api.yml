@@ -5498,6 +5498,22 @@ paths:
             type: number
             example: 10
         - in: query
+          name: imdbRatingGte
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+            example: 7.5
+          description: Minimum IMDb rating filter
+        - in: query
+          name: imdbRatingLte
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+            example: 9
+          description: Maximum IMDb rating filter
+        - in: query
           name: watchRegion
           schema:
             type: string
@@ -5823,6 +5839,22 @@ paths:
           schema:
             type: number
             example: 10
+        - in: query
+          name: imdbRatingGte
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+            example: 7.5
+          description: Minimum IMDb rating filter
+        - in: query
+          name: imdbRatingLte
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+            example: 9
+          description: Maximum IMDb rating filter
         - in: query
           name: watchRegion
           schema:
