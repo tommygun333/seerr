@@ -2,6 +2,14 @@ import defineMessages from '@app/utils/defineMessages';
 import type { ParsedUrlQuery } from 'querystring';
 import { z } from 'zod';
 
+const queryParamString = z.preprocess((value) => {
+  if (Array.isArray(value)) {
+    return value[value.length - 1];
+  }
+
+  return value;
+}, z.coerce.string());
+
 type AvailableColors =
   | 'black'
   | 'red'
@@ -107,6 +115,8 @@ export const QueryFilterOptions = z.object({
   voteAverageLte: z.string().optional(),
   voteCountLte: z.string().optional(),
   voteCountGte: z.string().optional(),
+  imdbRatingGte: queryParamString.optional(),
+  imdbRatingLte: queryParamString.optional(),
   watchRegion: z.string().optional(),
   watchProviders: z.string().optional(),
   status: z.string().optional(),
@@ -194,6 +204,14 @@ export const prepareFilterValues = (
     filterValues.voteCountLte = values.voteCountLte;
   }
 
+  if (values.imdbRatingGte) {
+    filterValues.imdbRatingGte = values.imdbRatingGte;
+  }
+
+  if (values.imdbRatingLte) {
+    filterValues.imdbRatingLte = values.imdbRatingLte;
+  }
+
   if (values.watchProviders) {
     filterValues.watchProviders = values.watchProviders;
   }
@@ -233,19 +251,25 @@ export const countActiveFilters = (filterValues: FilterOptions): number => {
   let totalCount = 0;
   const clonedFilters = Object.assign({}, filterValues);
 
-  if (clonedFilters.voteAverageGte || filterValues.voteAverageLte) {
+  if (clonedFilters.voteAverageGte || clonedFilters.voteAverageLte) {
     totalCount += 1;
     delete clonedFilters.voteAverageGte;
     delete clonedFilters.voteAverageLte;
   }
 
-  if (clonedFilters.voteCountGte || filterValues.voteCountLte) {
+  if (clonedFilters.imdbRatingGte || clonedFilters.imdbRatingLte) {
+    totalCount += 1;
+    delete clonedFilters.imdbRatingGte;
+    delete clonedFilters.imdbRatingLte;
+  }
+
+  if (clonedFilters.voteCountGte || clonedFilters.voteCountLte) {
     totalCount += 1;
     delete clonedFilters.voteCountGte;
     delete clonedFilters.voteCountLte;
   }
 
-  if (clonedFilters.withRuntimeGte || filterValues.withRuntimeLte) {
+  if (clonedFilters.withRuntimeGte || clonedFilters.withRuntimeLte) {
     totalCount += 1;
     delete clonedFilters.withRuntimeGte;
     delete clonedFilters.withRuntimeLte;

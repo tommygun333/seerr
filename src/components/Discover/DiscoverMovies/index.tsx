@@ -29,17 +29,23 @@ const messages = defineMessages('components.Discover.DiscoverMovies', {
   sortReleaseDateDesc: 'Release Date Descending',
   sortTmdbRatingAsc: 'TMDB Rating Ascending',
   sortTmdbRatingDesc: 'TMDB Rating Descending',
+  sortImdbRatingAsc: 'IMDb Rating Ascending',
+  sortImdbRatingDesc: 'IMDb Rating Descending',
   sortTitleAsc: 'Title (A-Z) Ascending',
   sortTitleDesc: 'Title (Z-A) Descending',
 });
 
-const SortOptions: Record<string, TMDBSortOptions> = {
+type DiscoverSortOption = TMDBSortOptions | 'imdbRating.asc' | 'imdbRating.desc';
+
+const SortOptions: Record<string, DiscoverSortOption> = {
   PopularityAsc: 'popularity.asc',
   PopularityDesc: 'popularity.desc',
   ReleaseDateAsc: 'release_date.asc',
   ReleaseDateDesc: 'release_date.desc',
   TmdbRatingAsc: 'vote_average.asc',
   TmdbRatingDesc: 'vote_average.desc',
+  ImdbRatingAsc: 'imdbRating.asc',
+  ImdbRatingDesc: 'imdbRating.desc',
   TitleAsc: 'original_title.asc',
   TitleDesc: 'original_title.desc',
 } as const;
@@ -105,6 +111,12 @@ const DiscoverMovies = () => {
               </option>
               <option value={SortOptions.TmdbRatingAsc}>
                 {intl.formatMessage(messages.sortTmdbRatingAsc)}
+              </option>
+              <option value={SortOptions.ImdbRatingDesc}>
+                {intl.formatMessage(messages.sortImdbRatingDesc)}
+              </option>
+              <option value={SortOptions.ImdbRatingAsc}>
+                {intl.formatMessage(messages.sortImdbRatingAsc)}
               </option>
               <option value={SortOptions.TitleAsc}>
                 {intl.formatMessage(messages.sortTitleAsc)}
