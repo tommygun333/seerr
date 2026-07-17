@@ -35,7 +35,9 @@ const messages = defineMessages('components.Discover.DiscoverTv', {
   sortTitleDesc: 'Title (Z-A) Descending',
 });
 
-const SortOptions: Record<string, TMDBSortOptions> = {
+type DiscoverSortOption = TMDBSortOptions | 'imdbRating.asc' | 'imdbRating.desc';
+
+const SortOptions: Record<string, DiscoverSortOption> = {
   PopularityAsc: 'popularity.asc',
   PopularityDesc: 'popularity.desc',
   FirstAirDateAsc: 'first_air_date.asc',
