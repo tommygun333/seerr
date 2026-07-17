@@ -3,7 +3,7 @@ import type { ParsedUrlQuery } from 'querystring';
 import { z } from 'zod';
 
 const queryParamString = z
-  .union([z.string(), z.array(z.string())])
+  .union([z.coerce.string(), z.array(z.coerce.string())])
   .transform((value) => (Array.isArray(value) ? value[value.length - 1] : value));
 
 type AvailableColors =
