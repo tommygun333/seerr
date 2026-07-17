@@ -86,7 +86,8 @@ const parseImdbRatingValue = (value?: string): number | undefined => {
     return undefined;
   }
 
-  // Next router query merges can surface duplicate values as a single comma-delimited string.
+  // Next router query merges can surface repeated values as a comma-delimited string.
+  // Use the latest value to match how URL query updates overwrite prior slider positions.
   const normalizedValue = value
     .split(',')
     .map((item) => item.trim())
@@ -99,6 +100,10 @@ const parseImdbRatingValue = (value?: string): number | undefined => {
 
 const parseDateQueryParam = (value?: string): string | undefined => {
   if (!value) {
+    return undefined;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return undefined;
   }
 
