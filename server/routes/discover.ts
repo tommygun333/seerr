@@ -86,6 +86,7 @@ const parseImdbRatingValue = (value?: string): number | undefined => {
     return undefined;
   }
 
+  // Next router query merges can surface duplicate values as a single comma-delimited string.
   const normalizedValue = value
     .split(',')
     .map((item) => item.trim())
