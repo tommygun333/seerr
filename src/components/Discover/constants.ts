@@ -196,6 +196,14 @@ export const prepareFilterValues = (
     filterValues.voteCountLte = values.voteCountLte;
   }
 
+  if (values.imdbRatingGte) {
+    filterValues.imdbRatingGte = values.imdbRatingGte;
+  }
+
+  if (values.imdbRatingLte) {
+    filterValues.imdbRatingLte = values.imdbRatingLte;
+  }
+
   if (values.watchProviders) {
     filterValues.watchProviders = values.watchProviders;
   }

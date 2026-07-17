@@ -17,6 +17,7 @@ export interface BaseSearchResult<T> {
 interface BaseMedia {
   id: number;
   mediaType: string;
+  imdbRating?: number;
   mediaInfo?: {
     status: MediaStatus;
   };
@@ -140,6 +141,27 @@ const useDiscover = <
         (i.mediaType === 'movie' || i.mediaType === 'tv') &&
         i.mediaInfo?.status !== MediaStatus.BLOCKLISTED
     );
+  }
+
+  const imdbSortBy = (options as { sortBy?: string } | undefined)?.sortBy;
+  if (imdbSortBy === 'imdbRating.asc' || imdbSortBy === 'imdbRating.desc') {
+    titles = [...titles].sort((a, b) => {
+    if (a.imdbRating === undefined && b.imdbRating === undefined) {
+      return 0;
+    }
+
+    if (a.imdbRating === undefined) {
+      return 1;
+    }
+
+    if (b.imdbRating === undefined) {
+      return -1;
+    }
+
+    return imdbSortBy === 'imdbRating.desc'
+      ? b.imdbRating - a.imdbRating
+      : a.imdbRating - b.imdbRating;
+    });
   }
 
   const isEmpty = !isLoadingInitialData && titles?.length === 0;
