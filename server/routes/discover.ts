@@ -68,8 +68,13 @@ const imdbApi = new IMDBRadarrProxy();
  */
 const enrichResultsWithImdbRatings = async (
   results: (MovieResult | TvResult)[],
-  mediaType: MediaType
+  mediaType: MediaType,
+  tmdb?: TheMovieDb
 ): Promise<(MovieResult | TvResult)[]> => {
+  if (!tmdb || results.length === 0) {
+    return results;
+  }
+
   const enrichedResults = [...results];
 
   // Fetch IMDb ratings in parallel with a concurrency limit to avoid overwhelming the IMDb API
@@ -81,17 +86,32 @@ const enrichResultsWithImdbRatings = async (
 
   for (const chunk of chunks) {
     await Promise.all(
-      chunk.map(async (result, index) => {
+      chunk.map(async (result) => {
         try {
           let imdbRatings;
+          let imdbId;
+
           if (mediaType === MediaType.MOVIE) {
-            // For movies, we'd need the IMDb ID which isn't in search results
-            // We can skip this for now or fetch detailed info
-            // For now, we'll leave IMDb rating as undefined
-            return;
-          } else {
-            // Similar for TV shows
-            return;
+            // Fetch movie details to get IMDb ID
+            const details = await tmdb.getMovie({ movieId: result.id });
+            imdbId = details.external_ids?.imdb_id;
+            
+            if (imdbId) {
+              imdbRatings = await imdbApi.getMovieRatings(imdbId);
+            }
+          } else if (mediaType === MediaType.TV) {
+            // Fetch TV details to get IMDb ID
+            const details = await tmdb.getTvShow({ tvId: result.id });
+            imdbId = details.external_ids?.imdb_id;
+            
+            if (imdbId) {
+              imdbRatings = await imdbApi.getTvRatings(imdbId);
+            }
+          }
+
+          if (imdbRatings && imdbRatings.criticsScore) {
+            result.imdbRating = imdbRatings.criticsScore;
+            result.imdbVoteCount = imdbRatings.criticsScoreCount;
           }
         } catch (error) {
           // Log but don't fail on individual IMDb fetch failures
@@ -275,7 +295,8 @@ discoverRoutes.get('/movies', async (req, res, next) => {
     if (isImdbSort || hasImdbFilters) {
       mappedResults = await enrichResultsWithImdbRatings(
         mappedResults,
-        MediaType.MOVIE
+        MediaType.MOVIE,
+        tmdb
       );
     }
 
@@ -617,7 +638,8 @@ discoverRoutes.get('/tv', async (req, res, next) => {
     if (isImdbSort || hasImdbFilters) {
       mappedResults = await enrichResultsWithImdbRatings(
         mappedResults,
-        MediaType.TV
+        MediaType.TV,
+        tmdb
       );
     }
 
