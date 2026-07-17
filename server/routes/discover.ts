@@ -326,7 +326,7 @@ discoverRoutes.get('/movies', async (req, res, next) => {
 
     // Apply IMDb rating sorting
     if (isImdbSort) {
-      const sortDirection = query.sortBy === 'imdbRating.asc' ? 'asc' : 'desc';
+      const sortDirection = query.sortBy === 'imdbRating.desc' ? 'desc' : 'asc';
       mappedResults = sortByImdbRating(mappedResults, sortDirection);
     }
 
@@ -669,7 +669,7 @@ discoverRoutes.get('/tv', async (req, res, next) => {
 
     // Apply IMDb rating sorting
     if (isImdbSort) {
-      const sortDirection = query.sortBy === 'imdbRating.asc' ? 'asc' : 'desc';
+      const sortDirection = query.sortBy === 'imdbRating.desc' ? 'desc' : 'asc';
       mappedResults = sortByImdbRating(mappedResults, sortDirection);
     }
 
