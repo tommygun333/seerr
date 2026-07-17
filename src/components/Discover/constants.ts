@@ -2,6 +2,10 @@ import defineMessages from '@app/utils/defineMessages';
 import type { ParsedUrlQuery } from 'querystring';
 import { z } from 'zod';
 
+const queryParamString = z
+  .union([z.string(), z.array(z.string())])
+  .transform((value) => (Array.isArray(value) ? value[value.length - 1] : value));
+
 type AvailableColors =
   | 'black'
   | 'red'
@@ -107,8 +111,8 @@ export const QueryFilterOptions = z.object({
   voteAverageLte: z.string().optional(),
   voteCountLte: z.string().optional(),
   voteCountGte: z.string().optional(),
-  imdbRatingGte: z.string().optional(),
-  imdbRatingLte: z.string().optional(),
+  imdbRatingGte: queryParamString.optional(),
+  imdbRatingLte: queryParamString.optional(),
   watchRegion: z.string().optional(),
   watchProviders: z.string().optional(),
   status: z.string().optional(),

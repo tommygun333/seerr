@@ -73,6 +73,19 @@ const tmdbSortOptions = new Set<string>(SortOptionsIterable);
 const isTmdbSortOption = (sortBy?: string): sortBy is SortOptions =>
   !!sortBy && tmdbSortOptions.has(sortBy);
 
+const queryParamString = z
+  .union([z.coerce.string(), z.array(z.coerce.string())])
+  .transform((value) => (Array.isArray(value) ? value[value.length - 1] : value));
+
+const parseImdbRatingValue = (value?: string): number | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsedValue = Number(value);
+  return Number.isFinite(parsedValue) ? parsedValue : undefined;
+};
+
 /**
  * Attempts to fetch IMDb ratings for a list of movie/TV results
  * Returns results with IMDb ratings attached when available
@@ -209,8 +222,8 @@ const QueryFilterOptions = z.object({
   voteAverageLte: z.coerce.string().optional(),
   voteCountGte: z.coerce.string().optional(),
   voteCountLte: z.coerce.string().optional(),
-  imdbRatingGte: z.coerce.string().optional(),
-  imdbRatingLte: z.coerce.string().optional(),
+  imdbRatingGte: queryParamString.optional(),
+  imdbRatingLte: queryParamString.optional(),
   network: z.coerce.string().optional(),
   watchProviders: z.coerce.string().optional(),
   watchRegion: z.coerce.string().optional(),
@@ -237,7 +250,10 @@ discoverRoutes.get('/movies', async (req, res, next) => {
 
     // Check if IMDb sorting or filtering is requested
     const isImdbSort = isImdbSortOption(query.sortBy);
-    const hasImdbFilters = query.imdbRatingGte || query.imdbRatingLte;
+    const imdbRatingGte = parseImdbRatingValue(query.imdbRatingGte);
+    const imdbRatingLte = parseImdbRatingValue(query.imdbRatingLte);
+    const hasImdbFilters =
+      imdbRatingGte !== undefined || imdbRatingLte !== undefined;
     
     // If IMDb sorting is requested, use a default TMDB sort for pagination
     const tmdbSortBy = isTmdbSortOption(query.sortBy)
@@ -319,8 +335,8 @@ discoverRoutes.get('/movies', async (req, res, next) => {
     if (hasImdbFilters) {
       mappedResults = filterByImdbRating(
         mappedResults,
-        query.imdbRatingGte ? Number(query.imdbRatingGte) : undefined,
-        query.imdbRatingLte ? Number(query.imdbRatingLte) : undefined
+        imdbRatingGte,
+        imdbRatingLte
       );
     }
 
@@ -580,7 +596,10 @@ discoverRoutes.get('/tv', async (req, res, next) => {
 
     // Check if IMDb sorting or filtering is requested
     const isImdbSort = isImdbSortOption(query.sortBy);
-    const hasImdbFilters = query.imdbRatingGte || query.imdbRatingLte;
+    const imdbRatingGte = parseImdbRatingValue(query.imdbRatingGte);
+    const imdbRatingLte = parseImdbRatingValue(query.imdbRatingLte);
+    const hasImdbFilters =
+      imdbRatingGte !== undefined || imdbRatingLte !== undefined;
     
     // If IMDb sorting is requested, use a default TMDB sort for pagination
     const tmdbSortBy = isTmdbSortOption(query.sortBy)
@@ -662,8 +681,8 @@ discoverRoutes.get('/tv', async (req, res, next) => {
     if (hasImdbFilters) {
       mappedResults = filterByImdbRating(
         mappedResults,
-        query.imdbRatingGte ? Number(query.imdbRatingGte) : undefined,
-        query.imdbRatingLte ? Number(query.imdbRatingLte) : undefined
+        imdbRatingGte,
+        imdbRatingLte
       );
     }
 
