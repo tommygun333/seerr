@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <testsuites>
-	<testsuite name="AvailabilitySync" time="1.081695" disabled="0" errors="0" tests="2" failures="1" skipped="0" hostname="runnervm3jyl0">
-		<testsuite name="TV season availability - Jellyfin" time="0.403928" disabled="0" errors="0" tests="5" failures="1" skipped="0" hostname="runnervm3jyl0">
-			<testcase name="should mark deleted seasons as DELETED when only some seasons exist in Jellyfin and Sonarr" time="0.138222" classname="test"/>
-			<testcase name="should still mark deleted seasons when externalServiceId is null (no Sonarr link)" time="0.074348" classname="test"/>
-			<testcase name="should mark deleted seasons even when Jellyfin returns empty season metadata entries (real-world behavior)" time="0.077489" classname="test"/>
-			<testcase name="should assume season exists when getEpisodes fails (safe fallback)" time="0.061344" classname="test"/>
-			<testcase name="should mark show as PARTIALLY_AVAILABLE when some seasons are available and some are unknown" time="0.051082" classname="test" failure="Show should be PARTIALLY_AVAILABLE when some seasons are available and some are unknown5 !== 4">
+	<testsuite name="AvailabilitySync" time="1.996751" disabled="0" errors="0" tests="2" failures="1" skipped="1" hostname="runnervm5mmn9">
+		<testsuite name="TV season availability - Jellyfin" time="0.684562" disabled="0" errors="0" tests="5" failures="1" skipped="0" hostname="runnervm5mmn9">
+			<testcase name="should mark deleted seasons as DELETED when only some seasons exist in Jellyfin and Sonarr" time="0.247854" classname="test"/>
+			<testcase name="should still mark deleted seasons when externalServiceId is null (no Sonarr link)" time="0.119138" classname="test"/>
+			<testcase name="should mark deleted seasons even when Jellyfin returns empty season metadata entries (real-world behavior)" time="0.093965" classname="test"/>
+			<testcase name="should assume season exists when getEpisodes fails (safe fallback)" time="0.085471" classname="test"/>
+			<testcase name="should mark show as PARTIALLY_AVAILABLE when some seasons are available and some are unknown" time="0.136467" classname="test" failure="Show should be PARTIALLY_AVAILABLE when some seasons are available and some are unknown5 !== 4">
 				<failure type="testCodeFailure" message="Show should be PARTIALLY_AVAILABLE when some seasons are available and some are unknown5 !== 4">
 [Error [ERR_TEST_FAILURE]: Show should be PARTIALLY_AVAILABLE when some seasons are available and some are unknown
 
@@ -18,7 +18,7 @@
   
   5 !== 4
   
-      at TestContext.&lt;anonymous> (/home/runner/work/seerr/seerr/tommygun333/seerr/server/lib/availabilitySync.test.ts:893:14)
+      at TestContext.&lt;anonymous> (/home/runner/work/seerr/seerr/server/lib/availabilitySync.test.ts:893:14)
       at async Test.run (node:internal/test_runner/test:1054:7)
       at async Suite.processPendingSubtests (node:internal/test_runner/test:744:7) {
     generatedMessage: false,
@@ -32,124 +32,75 @@
 				</failure>
 			</testcase>
 		</testsuite>
-		<testsuite name="TV season availability - Plex" time="0.176448" disabled="0" errors="0" tests="3" failures="0" skipped="0" hostname="runnervm3jyl0">
-			<testcase name="should mark deleted seasons when Plex returns empty season metadata entries" time="0.069740" classname="test"/>
-			<testcase name="should assume season exists when getChildrenMetadata fails for episodes (safe fallback)" time="0.051657" classname="test"/>
-			<testcase name="should mark deleted seasons when only some seasons have episodes in Plex (no Sonarr link)" time="0.054602" classname="test"/>
+		<testsuite name="TV season availability - Plex" time="0.480151" disabled="0" errors="0" tests="3" failures="0" skipped="0" hostname="runnervm5mmn9">
+			<testcase name="should mark deleted seasons when Plex returns empty season metadata entries" time="0.230987" classname="test"/>
+			<testcase name="should assume season exists when getChildrenMetadata fails for episodes (safe fallback)" time="0.100964" classname="test"/>
+			<testcase name="should mark deleted seasons when only some seasons have episodes in Plex (no Sonarr link)" time="0.147590" classname="test"/>
 		</testsuite>
 	</testsuite>
-	<testsuite name="Jellyfin Scanner" time="4.549471" disabled="0" errors="0" tests="1" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testsuite name="empty TMDB season handling" time="4.069275" disabled="0" errors="0" tests="1" failures="0" skipped="0" hostname="runnervm3jyl0">
-			<testcase name="should mark show as available when all non-empty TMDB seasons are fully scanned and an empty placeholder season exists in the DB" time="4.068626" classname="test"/>
+	<testsuite name="Jellyfin Scanner" time="4.575518" disabled="0" errors="0" tests="1" failures="0" skipped="0" hostname="runnervm5mmn9">
+		<testsuite name="empty TMDB season handling" time="4.066201" disabled="0" errors="0" tests="1" failures="0" skipped="0" hostname="runnervm5mmn9">
+			<testcase name="should mark show as available when all non-empty TMDB seasons are fully scanned and an empty placeholder season exists in the DB" time="4.065674" classname="test"/>
 		</testsuite>
 	</testsuite>
-	<testsuite name="Radarr Scanner" time="33.161931" disabled="0" errors="0" tests="3" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testsuite name="unmonitored movie handling" time="24.307084" disabled="0" errors="0" tests="6" failures="0" skipped="0" hostname="runnervm3jyl0">
-			<testcase name="resets PROCESSING to UNKNOWN when movie is unmonitored and has no file" time="4.063145" classname="test"/>
-			<testcase name="does not create new media entry when movie is unmonitored and has no file" time="4.038307" classname="test"/>
-			<testcase name="sets AVAILABLE when movie has a file" time="4.054281" classname="test"/>
-			<testcase name="sets PROCESSING when movie is monitored but has no file" time="4.050246" classname="test"/>
-			<testcase name="preserves DELETED status when movie is monitored but has no file" time="4.054032" classname="test"/>
-			<testcase name="keeps AVAILABLE status even when movie is unmonitored" time="4.046027" classname="test"/>
+	<testsuite name="Radarr Scanner" time="33.024881" disabled="0" errors="0" tests="3" failures="0" skipped="0" hostname="runnervm5mmn9">
+		<testsuite name="unmonitored movie handling" time="24.270567" disabled="0" errors="0" tests="6" failures="0" skipped="0" hostname="runnervm5mmn9">
+			<testcase name="resets PROCESSING to UNKNOWN when movie is unmonitored and has no file" time="4.056521" classname="test"/>
+			<testcase name="does not create new media entry when movie is unmonitored and has no file" time="4.034108" classname="test"/>
+			<testcase name="sets AVAILABLE when movie has a file" time="4.052445" classname="test"/>
+			<testcase name="sets PROCESSING when movie is monitored but has no file" time="4.040500" classname="test"/>
+			<testcase name="preserves DELETED status when movie is monitored but has no file" time="4.040349" classname="test"/>
+			<testcase name="keeps AVAILABLE status even when movie is unmonitored" time="4.045657" classname="test"/>
 		</testsuite>
-		<testsuite name="orphaned movie cleanup" time="8.284561" disabled="0" errors="0" tests="6" failures="0" skipped="0" hostname="runnervm3jyl0">
-			<testcase name="skips cleanup when a standard server has sync disabled" time="0.044960" classname="test"/>
-			<testcase name="resets PROCESSING to UNKNOWN when movie is not in any Radarr server" time="0.047319" classname="test"/>
-			<testcase name="does not reset AVAILABLE movie when missing from Radarr" time="0.043227" classname="test"/>
-			<testcase name="does not reset PROCESSING movie that still exists in Radarr" time="4.052063" classname="test"/>
-			<testcase name="does not reset TV media that is missing from Radarr" time="0.041485" classname="test"/>
-			<testcase name="only resets orphaned movies not found across all servers" time="4.054835" classname="test"/>
+		<testsuite name="orphaned movie cleanup" time="8.260350" disabled="0" errors="0" tests="6" failures="0" skipped="0" hostname="runnervm5mmn9">
+			<testcase name="skips cleanup when a standard server has sync disabled" time="0.043646" classname="test"/>
+			<testcase name="resets PROCESSING to UNKNOWN when movie is not in any Radarr server" time="0.045857" classname="test"/>
+			<testcase name="does not reset AVAILABLE movie when missing from Radarr" time="0.037027" classname="test"/>
+			<testcase name="does not reset PROCESSING movie that still exists in Radarr" time="4.044886" classname="test"/>
+			<testcase name="does not reset TV media that is missing from Radarr" time="0.037641" classname="test"/>
+			<testcase name="only resets orphaned movies not found across all servers" time="4.050528" classname="test"/>
 		</testsuite>
-		<testsuite name="4k orphaned movie cleanup" time="0.086894" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="runnervm3jyl0">
-			<testcase name="resets 4k PROCESSING to UNKNOWN when movie is not in any Radarr server" time="0.047418" classname="test"/>
-			<testcase name="does not reset 4k AVAILABLE when movie is missing from Radarr" time="0.039264" classname="test"/>
-		</testsuite>
-	</testsuite>
-	<testsuite name="Sonarr Scanner" time="8.951271" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testsuite name="orphaned show cleanup" time="8.381597" disabled="0" errors="0" tests="8" failures="0" skipped="0" hostname="runnervm3jyl0">
-			<testcase name="skips cleanup when a standard server has sync disabled" time="0.052928" classname="test"/>
-			<testcase name="resets PROCESSING to UNKNOWN when show is not in any Sonarr server" time="0.048721" classname="test"/>
-			<testcase name="does not reset AVAILABLE show when missing from Sonarr" time="0.037261" classname="test"/>
-			<testcase name="does not reset PROCESSING show that still exists in Sonarr" time="4.054361" classname="test"/>
-			<testcase name="only resets season statuses that are PROCESSING on orphaned shows" time="0.043052" classname="test"/>
-			<testcase name="does not reset movie media that is missing from Sonarr" time="0.043339" classname="test"/>
-			<testcase name="only resets orphaned shows not found across all servers" time="4.054879" classname="test"/>
-			<testcase name="skips shows without a tvdbId during cleanup" time="0.045900" classname="test"/>
-		</testsuite>
-		<testsuite name="4k orphaned show cleanup" time="0.095103" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="runnervm3jyl0">
-			<testcase name="resets 4k PROCESSING to UNKNOWN when show is not in any Sonarr server" time="0.043212" classname="test"/>
-			<testcase name="does not reset 4k AVAILABLE season when show is orphaned" time="0.051614" classname="test"/>
+		<testsuite name="4k orphaned movie cleanup" time="0.071618" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="runnervm5mmn9">
+			<testcase name="resets 4k PROCESSING to UNKNOWN when movie is not in any Radarr server" time="0.037082" classname="test"/>
+			<testcase name="does not reset 4k AVAILABLE when movie is missing from Radarr" time="0.034312" classname="test"/>
 		</testsuite>
 	</testsuite>
-	<testsuite name="WatchlistSync re-request gating" time="0.595024" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testcase name="re-requests DELETED watchlist items and skips non-requestable ones" time="0.068249" classname="test"/>
-		<testcase name="re-requests DELETED watchlist items even when a stale auto-request exists" time="0.050007" classname="test"/>
+	<testsuite name="Sonarr Scanner" time="8.819690" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="runnervm5mmn9">
+		<testsuite name="orphaned show cleanup" time="8.329809" disabled="0" errors="0" tests="8" failures="0" skipped="0" hostname="runnervm5mmn9">
+			<testcase name="skips cleanup when a standard server has sync disabled" time="0.039988" classname="test"/>
+			<testcase name="resets PROCESSING to UNKNOWN when show is not in any Sonarr server" time="0.048348" classname="test"/>
+			<testcase name="does not reset AVAILABLE show when missing from Sonarr" time="0.031528" classname="test"/>
+			<testcase name="does not reset PROCESSING show that still exists in Sonarr" time="4.049483" classname="test"/>
+			<testcase name="only resets season statuses that are PROCESSING on orphaned shows" time="0.036772" classname="test"/>
+			<testcase name="does not reset movie media that is missing from Sonarr" time="0.032397" classname="test"/>
+			<testcase name="only resets orphaned shows not found across all servers" time="4.054255" classname="test"/>
+			<testcase name="skips shows without a tvdbId during cleanup" time="0.035932" classname="test"/>
+		</testsuite>
+		<testsuite name="4k orphaned show cleanup" time="0.079191" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="runnervm5mmn9">
+			<testcase name="resets 4k PROCESSING to UNKNOWN when show is not in any Sonarr server" time="0.041876" classname="test"/>
+			<testcase name="does not reset 4k AVAILABLE season when show is orphaned" time="0.037056" classname="test"/>
+		</testsuite>
 	</testsuite>
-	<testsuite name="GET /auth/me" time="1.131793" disabled="0" errors="0" tests="3" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testcase name="returns 403 when not authenticated" time="0.052370" classname="test"/>
-		<testcase name="returns the authenticated user" time="0.333763" classname="test"/>
-		<testcase name="includes userEmailRequired warning when email is required but invalid" time="0.325832" classname="test"/>
+	<testsuite name="WatchlistSync re-request gating" time="0.537789" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="runnervm5mmn9">
+		<testcase name="re-requests DELETED watchlist items and skips non-requestable ones" time="0.060971" classname="test"/>
+		<testcase name="re-requests DELETED watchlist items even when a stale auto-request exists" time="0.042913" classname="test"/>
 	</testsuite>
-	<testsuite name="POST /auth/local" time="1.686770" disabled="0" errors="0" tests="9" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testcase name="returns 200 and user data on valid credentials" time="0.305616" classname="test"/>
-		<testcase name="returns 403 on wrong password" time="0.308858" classname="test"/>
-		<testcase name="returns 403 for nonexistent user" time="0.035711" classname="test"/>
-		<testcase name="returns 500 when local login is disabled" time="0.035516" classname="test"/>
-		<testcase name="returns 500 when email is missing" time="0.047692" classname="test"/>
-		<testcase name="returns 500 when password is missing" time="0.034576" classname="test"/>
-		<testcase name="is case-insensitive for email" time="0.300576" classname="test"/>
-		<testcase name="allows the non-admin user to log in" time="0.310769" classname="test"/>
-		<testcase name="sets a session on successful login" time="0.306425" classname="test"/>
-	</testsuite>
-	<testsuite name="POST /auth/logout" time="0.346678" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testcase name="returns 200 when not logged in" time="0.040207" classname="test"/>
-		<testcase name="destroys session and returns 200 when logged in" time="0.306262" classname="test"/>
-	</testsuite>
-	<testsuite name="POST /auth/reset-password" time="0.159152" disabled="0" errors="0" tests="4" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testcase name="returns 200 for a valid email" time="0.041454" classname="test"/>
-		<testcase name="returns 200 for nonexistent email (does not reveal user existence)" time="0.038024" classname="test"/>
-		<testcase name="returns 500 when email is missing" time="0.034070" classname="test"/>
-		<testcase name="sets a resetPasswordGuid on the user" time="0.045278" classname="test"/>
-	</testsuite>
-	<testsuite name="POST /auth/reset-password/:guid" time="1.340166" disabled="0" errors="0" tests="6" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testcase name="resets password with a valid guid and password" time="0.858135" classname="test"/>
-		<testcase name="returns 500 for an invalid guid" time="0.035864" classname="test"/>
-		<testcase name="returns 500 when password is too short" time="0.044079" classname="test"/>
-		<testcase name="returns 500 when password is missing" time="0.040220" classname="test"/>
-		<testcase name="returns 500 for an expired recovery link" time="0.044699" classname="test"/>
-		<testcase name="cannot reuse a guid after successful reset" time="0.316729" classname="test"/>
-	</testsuite>
-	<testsuite name="DELETE /request/:requestId" time="2.068911" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testcase name="allows the owner to delete their own pending request" time="0.365415" classname="test"/>
-		<testcase name="allows an admin to delete any pending request" time="0.331674" classname="test"/>
-		<testcase name="prevents a non-owner non-admin from deleting a pending request" time="0.316564" classname="test"/>
-		<testcase name="prevents the owner from deleting an approved request" time="0.324744" classname="test"/>
-		<testcase name="returns 404 for a non-existent request" time="0.306768" classname="test"/>
-	</testsuite>
-	<testsuite name="PUT /request/:requestId (movie)" time="0.338653" disabled="0" errors="0" tests="1" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testcase name="persists server and root folder changes to the database" time="0.338431" classname="test"/>
-	</testsuite>
-	<testsuite name="POST /request/:requestId/:status" time="0.668468" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testcase name="transitions to approved and records the acting user" time="0.332828" classname="test"/>
-		<testcase name="transitions to declined and records the acting user" time="0.335164" classname="test"/>
-	</testsuite>
-	<testsuite name="POST /request/:requestId/retry" time="0.328582" disabled="0" errors="0" tests="1" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testcase name="re-approves a failed request and records the acting user" time="0.328403" classname="test"/>
-	</testsuite>
-	<testsuite name="DELETE /request/:requestId, deleted media status restoration" time="2.012689" disabled="0" errors="0" tests="6" failures="0" skipped="0" hostname="runnervm3jyl0">
-		<testcase name="restores media status to DELETED when the re-request is deleted and a stale completed request remains" time="0.337931" classname="test"/>
-		<testcase name="restores media status4k to DELETED when the re-request is deleted and a stale completed request remains" time="0.331741" classname="test"/>
-		<testcase name="resets media status to UNKNOWN when the stale completed request is also deleted" time="0.342112" classname="test"/>
-		<testcase name="resets media status4k to UNKNOWN when the stale completed 4K request is also deleted" time="0.343210" classname="test"/>
-		<testcase name="does not reset media status when other active requests still exist" time="0.330648" classname="test"/>
-		<testcase name="does not reset media status when status is PARTIALLY_AVAILABLE and only completed requests remain" time="0.326506" classname="test"/>
-	</testsuite>
-	<!-- tests 74 -->
-	<!-- suites 23 -->
-	<!-- pass 73 -->
-	<!-- fail 1 -->
+	<testcase name="/home/runner/work/seerr/seerr/server/routes/auth.test.ts" time="4.214283" classname="test" failure="test failed">
+		<failure type="testCodeFailure" message="test failed">
+[Error: test failed] { code: 'ERR_TEST_FAILURE', failureType: 'testCodeFailure', cause: 'test failed', exitCode: 7, signal: null }
+		</failure>
+	</testcase>
+	<testcase name="/home/runner/work/seerr/seerr/server/routes/request.test.ts" time="4.294249" classname="test" failure="test failed">
+		<failure type="testCodeFailure" message="test failed">
+[Error: test failed] { code: 'ERR_TEST_FAILURE', failureType: 'testCodeFailure', cause: 'test failed', exitCode: 7, signal: null }
+		</failure>
+	</testcase>
+	<!-- tests 37 -->
+	<!-- suites 13 -->
+	<!-- pass 34 -->
+	<!-- fail 3 -->
 	<!-- cancelled 0 -->
 	<!-- skipped 0 -->
 	<!-- todo 0 -->
-	<!-- duration_ms 92217.520147 -->
+	<!-- duration_ms 84245.626968 -->
 </testsuites>
