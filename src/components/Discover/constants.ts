@@ -2,9 +2,13 @@ import defineMessages from '@app/utils/defineMessages';
 import type { ParsedUrlQuery } from 'querystring';
 import { z } from 'zod';
 
-const queryParamString = z
-  .union([z.coerce.string(), z.array(z.coerce.string())])
-  .transform((value) => (Array.isArray(value) ? value[value.length - 1] : value));
+const queryParamString = z.preprocess((value) => {
+  if (Array.isArray(value)) {
+    return value[value.length - 1];
+  }
+
+  return value;
+}, z.coerce.string());
 
 type AvailableColors =
   | 'black'

@@ -73,17 +73,38 @@ const tmdbSortOptions = new Set<string>(SortOptionsIterable);
 const isTmdbSortOption = (sortBy?: string): sortBy is SortOptions =>
   !!sortBy && tmdbSortOptions.has(sortBy);
 
-const queryParamString = z
-  .union([z.coerce.string(), z.array(z.coerce.string())])
-  .transform((value) => (Array.isArray(value) ? value[value.length - 1] : value));
+const queryParamString = z.preprocess((value) => {
+  if (Array.isArray(value)) {
+    return value[value.length - 1];
+  }
+
+  return value;
+}, z.coerce.string());
 
 const parseImdbRatingValue = (value?: string): number | undefined => {
   if (!value) {
     return undefined;
   }
 
-  const parsedValue = Number(value);
+  const normalizedValue = value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .pop();
+
+  const parsedValue = Number(normalizedValue ?? value);
   return Number.isFinite(parsedValue) ? parsedValue : undefined;
+};
+
+const parseDateQueryParam = (value?: string): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsedDate = new Date(value);
+  return Number.isNaN(parsedDate.getTime())
+    ? undefined
+    : parsedDate.toISOString().split('T')[0];
 };
 
 /**
@@ -163,7 +184,7 @@ const filterByImdbRating = <T extends MovieResult | TvResult>(
   imdbRatingGte?: number,
   imdbRatingLte?: number
 ): T[] => {
-  if (!imdbRatingGte && !imdbRatingLte) {
+  if (imdbRatingGte === undefined && imdbRatingLte === undefined) {
     return results;
   }
 
@@ -173,11 +194,11 @@ const filterByImdbRating = <T extends MovieResult | TvResult>(
       return false;
     }
 
-    if (imdbRatingGte && result.imdbRating < imdbRatingGte) {
+    if (imdbRatingGte !== undefined && result.imdbRating < imdbRatingGte) {
       return false;
     }
 
-    if (imdbRatingLte && result.imdbRating > imdbRatingLte) {
+    if (imdbRatingLte !== undefined && result.imdbRating > imdbRatingLte) {
       return false;
     }
 
@@ -267,12 +288,8 @@ discoverRoutes.get('/movies', async (req, res, next) => {
       originalLanguage: query.language,
       genre: query.genre,
       studio: query.studio,
-      primaryReleaseDateLte: query.primaryReleaseDateLte
-        ? new Date(query.primaryReleaseDateLte).toISOString().split('T')[0]
-        : undefined,
-      primaryReleaseDateGte: query.primaryReleaseDateGte
-        ? new Date(query.primaryReleaseDateGte).toISOString().split('T')[0]
-        : undefined,
+      primaryReleaseDateLte: parseDateQueryParam(query.primaryReleaseDateLte),
+      primaryReleaseDateGte: parseDateQueryParam(query.primaryReleaseDateGte),
       keywords,
       excludeKeywords,
       withRuntimeGte: query.withRuntimeGte,
@@ -612,12 +629,8 @@ discoverRoutes.get('/tv', async (req, res, next) => {
       language: req.locale ?? query.language,
       genre: query.genre,
       network: query.network ? Number(query.network) : undefined,
-      firstAirDateLte: query.firstAirDateLte
-        ? new Date(query.firstAirDateLte).toISOString().split('T')[0]
-        : undefined,
-      firstAirDateGte: query.firstAirDateGte
-        ? new Date(query.firstAirDateGte).toISOString().split('T')[0]
-        : undefined,
+      firstAirDateLte: parseDateQueryParam(query.firstAirDateLte),
+      firstAirDateGte: parseDateQueryParam(query.firstAirDateGte),
       originalLanguage: query.language,
       keywords,
       excludeKeywords,
